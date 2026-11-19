@@ -1,0 +1,14 @@
+{
+  "appId": "com.shiftvault.app",
+  "appName": "ShiftVault",
+  "webDir": "www",
+  "backgroundColor": "#000000",
+  "android": {
+    "backgroundColor": "#000000",
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

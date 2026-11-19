@@ -1,0 +1,68 @@
+name: Build Android
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Verify project layout
+        run: |
+          node -e "const fs=require('fs');const cfg=require('./capacitor.config.json');const files=['www/index.html','www/app.js','www/style.css','www/lang.js','www/icon-dark.png','www/icon-light.png','capacitor.config.json','scripts/prepare-android.mjs','assets/android/mipmap-xxxhdpi/ic_launcher_dark.png'];for(const f of files){if(!fs.existsSync(f)){console.error('Missing '+f);process.exit(1)}}if(cfg.webDir!=='www'){console.error('capacitor.config.json webDir must be www');process.exit(1)}console.log('Layout OK - webDir='+cfg.webDir)"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Add Android project
+        run: npx cap add android
+
+      - name: Install launcher icons and aliases
+        run: node scripts/prepare-android.mjs
+
+      - name: Sync web assets
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare artifact
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk ShiftVault-Android.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShiftVault-Android
+          path: ShiftVault-Android.apk
+          if-no-files-found: error

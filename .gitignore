@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Generated native and packaging output (root only; assets/android is tracked)
+/android/
+/dist/
+/release/
+
+# Local previews and logs
+/artifacts/
+*.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db

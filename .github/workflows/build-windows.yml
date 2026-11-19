@@ -1,0 +1,51 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows 10/11 EXE
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Verify project layout
+        run: |
+          node -e "const fs=require('fs');const cfg=require('./capacitor.config.json');const files=['www/index.html','www/app.js','www/style.css','www/lang.js','www/icon-dark.png','www/icon-light.png','electron-main.js','capacitor.config.json'];for(const f of files){if(!fs.existsSync(f)){console.error('Missing '+f);process.exit(1)}}if(cfg.webDir!=='www'){console.error('capacitor.config.json webDir must be www');process.exit(1)}console.log('Layout OK - webDir='+cfg.webDir)"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build portable EXE and installer
+        run: npx electron-builder --win --x64
+
+      - name: Upload portable EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShiftVault-Windows
+          path: release/ShiftVault-Windows.exe
+          if-no-files-found: error
+
+      - name: Upload NSIS installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShiftVault-Windows-Installer
+          path: release/ShiftVault-Setup.exe
+          if-no-files-found: error

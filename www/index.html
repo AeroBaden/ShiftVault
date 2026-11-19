@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#000000" id="theme-color-meta" />
+  <title>ShiftVault</title>
+  <meta name="description" content="ShiftVault is a free, open-source, offline-first personal finance and shift tracker. Every balance, shift and goal stays on your device." />
+  <meta name="application-name" content="ShiftVault" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-dark.png" id="favicon" />
+  <link rel="apple-touch-icon" href="icon-dark.png" id="apple-icon" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ShiftVault" />
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    /* Apply the saved theme before first paint to avoid a flash of the wrong scheme. */
+    (function () {
+      try {
+        var raw = localStorage.getItem("shiftvault.state.v1");
+        var settings = raw ? (JSON.parse(raw).settings || {}) : {};
+        var theme = settings.theme === "light" || settings.theme === "dark"
+          ? settings.theme
+          : (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        document.documentElement.setAttribute("data-theme", theme);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", theme === "light" ? "#F4F4F6" : "#000000");
+      } catch (err) { /* first run */ }
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <img id="brand-icon" src="icon-dark.png" alt="" width="28" height="28" decoding="async" />
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">ShiftVault</span>
+          <span class="brand-tagline" data-i18n="brand.tagline"></span>
+        </span>
+      </div>
+
+      <div class="topbar-total">
+        <span class="total-label" data-i18n="overview.liquidity"></span>
+        <span class="total-value num" id="header-total">&mdash;</span>
+      </div>
+
+      <button class="icon-btn" type="button" id="theme-toggle" data-action="toggle-theme" aria-label="Toggle theme" title="Toggle theme">
+        <span id="theme-icon"></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs" aria-label="Primary"></nav>
+
+  <main class="container" id="main">
+    <div id="banner-root"></div>
+    <div id="view" class="view"></div>
+  </main>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="lang.js"></script>
+  <script src="store.js"></script>
+  <script src="fx.js"></script>
+  <script src="icon.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

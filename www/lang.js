@@ -143,7 +143,7 @@
       "options.resetBody": "All accounts, entries, goals and settings on this device will be deleted. This cannot be undone.",
       "options.resetDone": "All data erased",
       "options.about": "About",
-      "options.aboutBody": "ShiftVault is a free, open-source personal finance and shift tracker. No accounts, no servers, no analytics — plain HTML, CSS and JavaScript, packaged with Capacitor and Electron.",
+      "options.aboutBody": "ShiftVault is a free, open-source personal finance and shift tracker. No accounts, no servers, no analytics — plain HTML, CSS and JavaScript, packaged for Android with Capacitor.",
       "options.version": "Version",
       "options.license": "MIT License",
 
@@ -303,7 +303,7 @@
       "options.resetBody": "Alle Konten, Buchungen, Ziele und Einstellungen auf diesem Gerät werden dauerhaft gelöscht. Das kann nicht rückgängig gemacht werden.",
       "options.resetDone": "Alle Daten gelöscht",
       "options.about": "Über",
-      "options.aboutBody": "ShiftVault ist ein kostenloser Open-Source-Tracker für Finanzen und Schichten. Keine Konten, keine Server, keine Analyse – reines HTML, CSS und JavaScript, verpackt mit Capacitor und Electron.",
+      "options.aboutBody": "ShiftVault ist ein kostenloser Open-Source-Tracker für Finanzen und Schichten. Keine Konten, keine Server, keine Analyse – reines HTML, CSS und JavaScript, für Android mit Capacitor verpackt.",
       "options.version": "Version",
       "options.license": "MIT-Lizenz",
 
@@ -463,7 +463,7 @@
       "options.resetBody": "Se eliminarán todas las cuentas, movimientos, objetivos y ajustes de este dispositivo. No se puede deshacer.",
       "options.resetDone": "Datos borrados",
       "options.about": "Acerca de",
-      "options.aboutBody": "ShiftVault es un gestor de finanzas y turnos gratuito y de código abierto. Sin cuentas, sin servidores, sin analítica: HTML, CSS y JavaScript puros, empaquetado con Capacitor y Electron.",
+      "options.aboutBody": "ShiftVault es un gestor de finanzas y turnos gratuito y de código abierto. Sin cuentas, sin servidores, sin analítica: HTML, CSS y JavaScript puros, empaquetado para Android con Capacitor.",
       "options.version": "Versión",
       "options.license": "Licencia MIT",
 
@@ -623,7 +623,7 @@
       "options.resetBody": "Tous les comptes, écritures, objectifs et réglages de cet appareil seront supprimés. Cette action est irréversible.",
       "options.resetDone": "Données effacées",
       "options.about": "À propos",
-      "options.aboutBody": "ShiftVault est un suivi de finances et de shifts gratuit et open source. Sans compte, sans serveur, sans analyse — HTML, CSS et JavaScript purs, empaqueté avec Capacitor et Electron.",
+      "options.aboutBody": "ShiftVault est un suivi de finances et de shifts gratuit et open source. Sans compte, sans serveur, sans analyse — HTML, CSS et JavaScript purs, empaqueté pour Android avec Capacitor.",
       "options.version": "Version",
       "options.license": "Licence MIT",
 
@@ -783,7 +783,7 @@
       "options.resetBody": "Tutti i conti, i movimenti, gli obiettivi e le impostazioni su questo dispositivo saranno eliminati. L’operazione è irreversibile.",
       "options.resetDone": "Dati cancellati",
       "options.about": "Informazioni",
-      "options.aboutBody": "ShiftVault è un tracker di finanze e turni gratuito e open source. Nessun account, nessun server, nessuna analisi: solo HTML, CSS e JavaScript, confezionato con Capacitor ed Electron.",
+      "options.aboutBody": "ShiftVault è un tracker di finanze e turni gratuito e open source. Nessun account, nessun server, nessuna analisi: solo HTML, CSS e JavaScript, confezionato per Android con Capacitor.",
       "options.version": "Versione",
       "options.license": "Licenza MIT",
 
@@ -943,7 +943,7 @@
       "options.resetBody": "Todas as contas, movimentos, objetivos e definições neste dispositivo serão eliminados. Não é possível desfazer.",
       "options.resetDone": "Dados apagados",
       "options.about": "Sobre",
-      "options.aboutBody": "O ShiftVault é um gestor de finanças e turnos gratuito e de código aberto. Sem contas, sem servidores, sem análises — apenas HTML, CSS e JavaScript, empacotado com Capacitor e Electron.",
+      "options.aboutBody": "O ShiftVault é um gestor de finanças e turnos gratuito e de código aberto. Sem contas, sem servidores, sem análises — apenas HTML, CSS e JavaScript, empacotado para Android com o Capacitor.",
       "options.version": "Versão",
       "options.license": "Licença MIT",
 

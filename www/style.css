@@ -155,7 +155,7 @@ a {
   z-index: 40;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
-  padding-top: env(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .topbar-inner {
@@ -288,7 +288,7 @@ a {
 
 .tabs {
   position: sticky;
-  top: calc(var(--topbar-h) + 1px);
+  top: calc(var(--topbar-h) + 1px + env(safe-area-inset-top, 0px));
   z-index: 35;
   display: flex;
   gap: 4px;
@@ -1662,7 +1662,7 @@ input[type="date"].input {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0;
     max-width: none;
-    padding: 0 0 env(safe-area-inset-bottom);
+    padding: 0 0 env(safe-area-inset-bottom, 0px);
     border-top: 1px solid var(--border);
     border-bottom: 0;
     background: var(--surface);

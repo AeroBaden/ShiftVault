@@ -1,8 +1,8 @@
 # ShiftVault
 
-ShiftVault is a free, open-source personal finance and shift tracker that runs entirely on your device. It combines a ledger for accounts and entries with a shift log, monthly goals and multi-currency support, and it keeps working without a connection.
+ShiftVault is a free, open-source personal finance and shift tracker for Android. It combines a ledger for accounts and entries with a shift log, monthly goals and multi-currency support, and it keeps working without a connection.
 
-The same web application in [`www/`](www) powers the browser build, the Android APK (Capacitor) and the Windows 10/11 desktop app (Electron). There is no backend, no account system and no telemetry.
+The app is a Capacitor shell around a dependency-free web application in [`www/`](www). There is no backend, no account system and no telemetry. ShiftVault is Android-only for now.
 
 ## Features
 
@@ -11,54 +11,59 @@ The same web application in [`www/`](www) powers the browser build, the Android 
 - **Goals and insights** — monthly targets, progress and per-account breakdowns.
 - **12 currencies** — amounts are stored per entry and formatted consistently. Exchange rates come from the Frankfurter API and are cached locally with a built-in fallback.
 - **Six languages** — English, German, Spanish, French, Italian and Portuguese, switchable at any time.
-- **Two themes** — an OLED-friendly dark theme and a light theme with an emerald accent.
+- **Two themes** — an OLED-friendly dark theme with true `#000000` and a light theme with `#F4F4F6`.
 - **Local backups** — export the ledger as CSV or as a complete JSON backup.
-- **Native packaging** — a signed-for-testing Android APK and a portable or installable Windows executable, both built from the same `www` source.
-- **Custom app identity** — a hand-drawn bank-vault icon that can be switched between a dark and a light variant.
+- **Vault identity** — a hand-drawn bank-vault icon with dark and light variants, including Android adaptive icons.
+
+## Native Android polish
+
+ShiftVault is not a plain web wrapper. The Android build adds:
+
+- **Synchronised system bars** — the status bar and navigation bar follow the in-app theme:
+  - Dark mode: `#000000` background with light system icons.
+  - Light mode: `#F4F4F6` background with dark system icons.
+- **Native haptics** — a light impact when switching tabs and a medium impact after logging a shift or adding a transaction.
+- **Predictable back navigation** — the hardware back button and back gesture first close an open dialog or tutorial, then return to the **Track** tab, and only exit the app from there.
+- **Safe-area layout** — `viewport-fit=cover` plus `env(safe-area-inset-top)` and `env(safe-area-inset-bottom)` keep the header below camera cutouts and the bottom navigation above the gesture bar. The sticky tab strip also accounts for the top inset.
 
 ## Privacy by design
 
-ShiftVault is built to keep financial data on the device.
-
-- All accounts, entries, shifts, goals and settings are stored in the browser's `localStorage`.
-- There is no server, no sign-in, no sync service, no analytics, no advertising and no tracking.
+- All accounts, entries, shifts, goals and settings are stored in the Android WebView's `localStorage`.
+- There is no server, no sign-in, no analytics, no advertising and no tracking.
 - The only outbound network request is an optional exchange-rate refresh to `api.frankfurter.dev`. If it fails, the app falls back to bundled reference rates and remains fully usable.
-- The Android WebView and the Electron window load local files only. Electron runs with `contextIsolation`, `sandbox` enabled, `nodeIntegration` disabled and no application menu.
-- Clearing the app's site data or uninstalling the app removes the local database. Export a JSON backup first if you want to keep it.
+- The WebView loads local assets only. Export a JSON backup before uninstalling if you want to keep your data.
 
 ## Repository structure
 
 ```
 shiftvault/
 ├── .github/workflows/
-│   ├── build-android.yml      # Android APK CI
-│   └── build-windows.yml      # Windows EXE / installer CI
+│   └── build-android.yml      # Android APK CI, optional release upload on v* tags
 ├── assets/
-│   └── android/               # launcher icon sets copied into the native project
+│   └── android/               # launcher icon sets for dark/light and adaptive icons
 ├── scripts/
 │   ├── gen-icons.py           # regenerates every PNG icon (Pillow)
-│   ├── prepare-android.mjs    # icons, launcher aliases and native icon plugin
+│   ├── prepare-android.mjs    # icons, launcher aliases and native plugins
 │   └── serve.mjs              # dependency-free static server for local previews
-├── www/                       # single source of truth for all three targets
+├── www/                       # the complete web application
 │   ├── index.html
 │   ├── style.css
 │   ├── lang.js                # translations for six languages
 │   ├── store.js               # localStorage state and data model
 │   ├── fx.js                  # exchange rates, cache and formatting
 │   ├── icon.js                # in-app Canvas vault icon generator
-│   ├── app.js                 # views, forms, dialogs, exports
+│   ├── app.js                 # views, forms, dialogs, exports, native bridge
 │   ├── icon-dark.png
 │   ├── icon-light.png
 │   ├── icon-maskable.png
 │   └── manifest.webmanifest
-├── capacitor.config.json      # Android: appId, app name, webDir "www"
-├── electron-main.js           # Windows: native window loading www/index.html
-├── package.json               # dependencies, scripts and electron-builder config
+├── capacitor.config.json      # appId com.shiftvault.app, appName ShiftVault, webDir www
+├── package.json               # Capacitor 6 dependencies and build scripts
 ├── LICENSE
 └── README.md
 ```
 
-`www/` is committed. `android/`, `dist/` and `release/` are generated and ignored by Git.
+`www/` is committed. `android/` is generated and ignored by Git.
 
 ## Requirements
 
@@ -66,14 +71,13 @@ shiftvault/
 | --- | --- |
 | Web preview | Node.js 18+ (Node.js 20 recommended) |
 | Android APK | Node.js 20, JDK 17, Android SDK (API 34) |
-| Windows EXE | Node.js 20 on Windows 10/11 (or Wine when cross-building) |
 | Icon generation | Python 3 with Pillow (`pip install pillow`) |
 
 Capacitor 6 is used deliberately: it is the current Capacitor line that targets JDK 17, which keeps the Android workflow reproducible on `ubuntu-latest`.
 
 ## Run the web app locally
 
-The web app has no build step. Serve `www/` over HTTP so that `localStorage`, the manifest and the icon files behave exactly as they do in the native shells:
+The web app has no build step. Serve `www/` over HTTP so that `localStorage`, the manifest and the icon files behave as they do in the native shell:
 
 ```bash
 npm ci
@@ -81,14 +85,14 @@ npm run serve
 # http://localhost:3000
 ```
 
-Opening `www/index.html` directly with `file://` works in most browsers, but a local server is recommended.
+The native plugins are no-ops in a normal browser; the app degrades gracefully to the web experience.
 
 ## Android build (Capacitor)
 
 ### From GitHub Actions
 
 1. Push to `main` or start **Build Android** manually from the **Actions** tab.
-2. The workflow installs Node.js 20 and JDK 17, runs `npx cap add android`, installs the launcher icons and aliases, syncs `www`, and runs `./gradlew assembleDebug`.
+2. The workflow installs Node.js 20 and JDK 17, runs `npx cap add android`, installs the Vault icons and native plugins, syncs `www` and the Capacitor plugins, and runs `./gradlew assembleDebug`.
 3. Open the completed run and download the **ShiftVault-Android** artifact. It contains `ShiftVault-Android.apk`.
 
 The APK is a debug build signed with the standard Android debug key. It installs directly on a device (enable installation from unknown sources) and is intended for testing and sideloading, not for Play Store distribution.
@@ -97,81 +101,36 @@ The APK is a debug build signed with the standard Android debug key. It installs
 
 ```bash
 npm ci
-npm run android:add      # npx cap add android + launcher icons/aliases
-npx cap sync android     # copies www into the native project
+npm run android:add      # npx cap add android + icons and native plugins
+npx cap sync android     # copies www and the Capacitor plugins
 cd android
 ./gradlew assembleDebug
 ```
 
 The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
 
-### Android launcher icon switching
+### Download from GitHub Releases
 
-`capacitor.config.json` points Capacitor at `www`. After the Android project is generated, `scripts/prepare-android.mjs`:
+Pushing a tag that starts with `v` (for example `v1.0.0`) builds the APK and attaches `ShiftVault-Android.apk` to the matching GitHub Release automatically. You can also download the artifact from the workflow run at any time.
 
-- copies the dark and light icon sets from `assets/android` into the native `res/` folders,
+## Native implementation details
+
+`capacitor.config.json` points Capacitor at `www` and sets the initial dark status bar. The web app talks to the native layer through `window.Capacitor`:
+
+- `@capacitor/status-bar` sets the status bar style and background on every theme change.
+- A generated native `SystemBars` plugin sets the navigation bar colour and the light/dark system icon appearance. It is written by `scripts/prepare-android.mjs` and registered in `MainActivity`, together with the `IconSwitch` plugin.
+- `@capacitor/haptics` provides the impact feedback.
+- `@capacitor/app` provides the `backButton` listener and `exitApp()`.
+
+### Android launcher icons
+
+`scripts/prepare-android.mjs`:
+
+- copies the dark and light icon sets from `assets/android` into the native `res/` folders, including adaptive icons (`mipmap-anydpi-v26`) and legacy densities,
 - moves the `LAUNCHER` intent filter from `MainActivity` to two `activity-alias` entries (`MainActivityDark` and `MainActivityLight`),
-- generates and registers a small native `IconSwitch` plugin that toggles those aliases at runtime.
+- generates and registers the native `IconSwitch` plugin so **Options → App icon** changes the actual home-screen icon.
 
-Choosing an icon in **Options → App icon** while running the Android app therefore changes the actual home-screen icon. The target alias is enabled before the other one is disabled, so the launcher never loses the icon. Some launchers cache icons briefly; a restart of the launcher may be needed. Pinned shortcuts and widgets keep the icon they were created with.
-
-The desktop build intentionally keeps a fixed icon: the Electron window, executable and shortcuts always use `www/icon-dark.png`.
-
-## Windows 10/11 build (Electron)
-
-### From GitHub Actions
-
-1. Push to `main` or start **Build Windows** manually from the **Actions** tab.
-2. The workflow installs Node.js 20 and runs `npx electron-builder --win --x64`.
-3. Download one of the artifacts:
-   - **ShiftVault-Windows** → `ShiftVault-Windows.exe` (portable, no installation)
-   - **ShiftVault-Windows-Installer** → `ShiftVault-Setup.exe` (NSIS installer with Start Menu and desktop shortcuts)
-
-### Locally
-
-```bash
-npm ci
-npm run dist:win
-```
-
-Both targets are written to `release/`:
-
-- `release/ShiftVault-Windows.exe` — portable executable
-- `release/ShiftVault-Setup.exe` — NSIS installer
-
-The native window opens `www/index.html` with a `#000000` background, a default size of 480×820, a minimum width of 380 px, a hidden menu bar and the vault icon from `www/icon-dark.png`.
-
-## Downloading builds from GitHub
-
-### GitHub Actions artifacts
-
-1. Open the repository's **Actions** tab.
-2. Select **Build Android** or **Build Windows**.
-3. Open the most recent successful run.
-4. Download the artifact at the bottom of the run:
-   - `ShiftVault-Android.zip` → `ShiftVault-Android.apk`
-   - `ShiftVault-Windows.zip` → `ShiftVault-Windows.exe`
-   - `ShiftVault-Windows-Installer.zip` → `ShiftVault-Setup.exe`
-
-Artifacts are retained according to the repository's retention settings. Downloading artifacts from a public repository requires a GitHub sign-in.
-
-### GitHub Releases
-
-When a release is published, the same files can be attached to it as release assets. Open the **Releases** page on the right side of the repository and download `ShiftVault-Android.apk` or `ShiftVault-Windows.exe` from the latest release.
-
-## Configuration
-
-| Setting | File | Value |
-| --- | --- | --- |
-| Android app ID | `capacitor.config.json` | `com.shiftvault.app` |
-| Android app name | `capacitor.config.json` | `ShiftVault` |
-| Capacitor web directory | `capacitor.config.json` | `www` |
-| Electron entry file | `package.json` → `main` | `electron-main.js` |
-| Desktop application ID | `package.json` → `build.appId` | `com.shiftvault.desktop` |
-| Desktop window | `electron-main.js` | 480×820, min. 380 px wide, `#000000` |
-| Build output | `package.json` → `build.directories.output` | `release` |
-
-Electron packages only `www/**/*`, `electron-main.js` and `package.json`, so the Android project, scripts and CI files are never included in the desktop app.
+The target alias is enabled before the other one is disabled, so the launcher never loses the icon. Some launchers cache icons briefly; a launcher restart may be needed. Pinned shortcuts and widgets keep the icon they were created with.
 
 ## Regenerating icons
 

@@ -112,14 +112,99 @@
     }
   }
 
-  function applyNativeIcon(variant) {
+  function capPlugin(name) {
     var cap = nativeAndroid();
-    if (!cap || !cap.Plugins || !cap.Plugins.IconSwitch) return;
+    if (!cap) return null;
     try {
-      var result = cap.Plugins.IconSwitch.setIcon({ variant: variant === "light" ? "light" : "dark" });
+      if (cap.Plugins && cap.Plugins[name]) return cap.Plugins[name];
+      if (typeof cap.registerPlugin === "function") return cap.registerPlugin(name);
+    } catch (err) {
+      /* the plugin is not part of this runtime */
+    }
+    return null;
+  }
+
+  function haptic(style) {
+    var haptics = capPlugin("Haptics");
+    if (!haptics || typeof haptics.impact !== "function") return;
+    try {
+      var result = haptics.impact({ style: style || "LIGHT" });
+      if (result && typeof result.catch === "function") result.catch(function () {});
+    } catch (err) {
+      /* haptics are best effort and Android-only */
+    }
+  }
+
+  var nativeBarsTheme = null;
+
+  function syncSystemBars(theme) {
+    var mode = theme === "light" ? "light" : "dark";
+    if (!nativeAndroid() || nativeBarsTheme === mode) return;
+    var dark = mode === "dark";
+    var statusBar = capPlugin("StatusBar");
+    var bars = capPlugin("SystemBars");
+    if (!statusBar && !bars) return;
+    nativeBarsTheme = mode;
+    if (statusBar) {
+      try {
+        var style = statusBar.setStyle({ style: dark ? "DARK" : "LIGHT" });
+        if (style && typeof style.catch === "function") style.catch(function () {});
+        var color = statusBar.setBackgroundColor({ color: dark ? "#000000" : "#F4F4F6" });
+        if (color && typeof color.catch === "function") color.catch(function () {});
+      } catch (err) {
+        /* status bar is Android-only */
+      }
+    }
+    if (bars) {
+      try {
+        var result = bars.setTheme({ theme: mode });
+        if (result && typeof result.catch === "function") result.catch(function () {});
+      } catch (err) {
+        /* navigation bar is Android-only */
+      }
+    }
+  }
+
+  function applyNativeIcon(variant) {
+    var iconSwitch = capPlugin("IconSwitch");
+    if (!iconSwitch || typeof iconSwitch.setIcon !== "function") return;
+    try {
+      var result = iconSwitch.setIcon({ variant: variant === "light" ? "light" : "dark" });
       if (result && typeof result.catch === "function") result.catch(function () {});
     } catch (err) {
       /* native icon plugin is only available in the Android build */
+    }
+  }
+
+  function onNativeBack() {
+    var root = document.getElementById("modal-root");
+    if (root && root.innerHTML.trim()) {
+      closeModal(false);
+      return;
+    }
+    if (tab() !== "track") {
+      navigate("track");
+      return;
+    }
+    var appPlugin = capPlugin("App");
+    if (appPlugin && typeof appPlugin.exitApp === "function") {
+      try {
+        var result = appPlugin.exitApp();
+        if (result && typeof result.catch === "function") result.catch(function () {});
+      } catch (err) {
+        /* exit is Android-only */
+      }
+    }
+  }
+
+  function setupNativeShell() {
+    var appPlugin = capPlugin("App");
+    if (!appPlugin || typeof appPlugin.addListener !== "function") return;
+    try {
+      var listener = appPlugin.addListener("backButton", onNativeBack);
+      if (listener && typeof listener.catch === "function") listener.catch(function () {});
+    } catch (err) {
+      /* not running inside the Android shell */
     }
   }
 
@@ -161,6 +246,7 @@
     document.documentElement.setAttribute("data-theme", theme === "light" ? "light" : "dark");
     var meta = document.getElementById("theme-color-meta");
     if (meta) meta.setAttribute("content", theme === "light" ? "#F4F4F6" : "#000000");
+    syncSystemBars(theme);
   }
 
   function renderHeader() {
@@ -962,6 +1048,7 @@
 
     switch (action) {
       case "go-tab":
+        haptic("LIGHT");
         navigate(actionEl.getAttribute("data-tab"));
         break;
       case "toggle-theme":
@@ -1093,7 +1180,10 @@
         date: todayISO(),
         note: t("track.shiftNote", { hours: money.formatHours(hours) })
       });
-      if (shift) toast(t("track.success"));
+      if (shift) {
+        haptic("MEDIUM");
+        toast(t("track.success"));
+      }
       return;
     }
 
@@ -1111,7 +1201,10 @@
         note: String(entryData.get("note") || ""),
         date: String(entryData.get("date") || todayISO())
       });
-      if (entry) toast(t("ledger.added"));
+      if (entry) {
+        haptic("MEDIUM");
+        toast(t("ledger.added"));
+      }
       return;
     }
 
@@ -1196,6 +1289,7 @@
     applyTheme(settings().theme);
     SV.icon.apply(settings().icon);
     applyNativeIcon(settings().icon);
+    setupNativeShell();
 
     var view = document.getElementById("view");
     if (view) view.innerHTML = "";

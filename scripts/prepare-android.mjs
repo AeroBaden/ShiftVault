@@ -138,6 +138,7 @@ import com.getcapacitor.BridgeActivity
 class MainActivity : BridgeActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         registerPlugin(IconSwitchPlugin::class.java)
+        registerPlugin(SystemBarsPlugin::class.java)
         super.onCreate(savedInstanceState)
     }
 }
@@ -186,9 +187,55 @@ class IconSwitchPlugin : Plugin() {
 }
 `;
 
+  const systemBars = `package ${packageName}
+
+import android.graphics.Color
+import android.os.Build
+import android.view.View
+import android.view.WindowManager
+import com.getcapacitor.Plugin
+import com.getcapacitor.PluginCall
+import com.getcapacitor.PluginMethod
+import com.getcapacitor.annotation.CapacitorPlugin
+
+@CapacitorPlugin(name = "SystemBars")
+class SystemBarsPlugin : Plugin() {
+
+    @Suppress("DEPRECATION")
+    @PluginMethod
+    fun setTheme(call: PluginCall) {
+        val dark = call.getString("theme", "dark") != "light"
+        activity.runOnUiThread {
+            val window = activity.window
+            val color = Color.parseColor(if (dark) "#000000" else "#F4F4F6")
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            window.statusBarColor = color
+            window.navigationBarColor = color
+
+            val decor = window.decorView
+            var flags = decor.systemUiVisibility
+            if (dark) {
+                flags = flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    flags = flags and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
+                }
+            } else {
+                flags = flags or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    flags = flags or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                }
+            }
+            decor.systemUiVisibility = flags
+            call.resolve()
+        }
+    }
+}
+`;
+
   fs.writeFileSync(mainActivityPath, mainActivity);
   fs.writeFileSync(path.join(activityDir, "IconSwitchPlugin.kt"), plugin);
-  console.log("Native plugin registered (Kotlin)");
+  fs.writeFileSync(path.join(activityDir, "SystemBarsPlugin.kt"), systemBars);
+  console.log("Native plugins registered (Kotlin)");
 } else {
   const mainActivity = `package ${packageName};
 
@@ -199,6 +246,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(IconSwitchPlugin.class);
+        registerPlugin(SystemBarsPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
@@ -248,9 +296,57 @@ public class IconSwitchPlugin extends Plugin {
 }
 `;
 
+  const systemBars = `package ${packageName};
+
+import android.graphics.Color;
+import android.os.Build;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+
+@CapacitorPlugin(name = "SystemBars")
+public class SystemBarsPlugin extends Plugin {
+
+    @SuppressWarnings("deprecation")
+    @PluginMethod
+    public void setTheme(PluginCall call) {
+        final boolean dark = !"light".equals(call.getString("theme", "dark"));
+        getActivity().runOnUiThread(() -> {
+            Window window = getActivity().getWindow();
+            int color = Color.parseColor(dark ? "#000000" : "#F4F4F6");
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(color);
+            window.setNavigationBarColor(color);
+
+            View decor = window.getDecorView();
+            int flags = decor.getSystemUiVisibility();
+            if (dark) {
+                flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                }
+            } else {
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                }
+            }
+            decor.setSystemUiVisibility(flags);
+            call.resolve();
+        });
+    }
+}
+`;
+
   fs.writeFileSync(mainActivityPath, mainActivity);
   fs.writeFileSync(path.join(activityDir, "IconSwitchPlugin.java"), plugin);
-  console.log("Native plugin registered (Java)");
+  fs.writeFileSync(path.join(activityDir, "SystemBarsPlugin.java"), systemBars);
+  console.log("Native plugins registered (Java)");
 }
 
 console.log("ShiftVault Android icon switching ready");

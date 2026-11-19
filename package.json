@@ -1,71 +1,28 @@
 {
   "name": "shiftvault",
-  "productName": "ShiftVault",
   "version": "1.0.0",
-  "description": "Free, open-source, offline-first personal finance and shift tracker.",
+  "description": "Free, open-source, offline-first personal finance and shift tracker for Android.",
   "author": "ShiftVault contributors",
   "license": "MIT",
   "private": true,
-  "main": "electron-main.js",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
     "serve": "node scripts/serve.mjs",
     "icons": "python3 scripts/gen-icons.py",
-    "electron": "electron .",
-    "dist:win": "electron-builder --win --x64",
     "android:add": "cap add android && node scripts/prepare-android.mjs",
     "android:sync": "cap sync android && node scripts/prepare-android.mjs",
     "android:apk": "cap add android && node scripts/prepare-android.mjs && cap sync android && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",
-    "@capacitor/core": "^6.0.0"
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/haptics": "^6.0.3",
+    "@capacitor/status-bar": "^6.0.3"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.0.0",
-    "electron": "^33.2.1",
-    "electron-builder": "^25.1.8"
-  },
-  "build": {
-    "appId": "com.shiftvault.desktop",
-    "productName": "ShiftVault",
-    "copyright": "Copyright © 2026 ShiftVault contributors",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "www/**/*",
-      "electron-main.js",
-      "package.json"
-    ],
-    "win": {
-      "icon": "www/icon-dark.png",
-      "executableName": "ShiftVault",
-      "target": [
-        {
-          "target": "portable",
-          "arch": ["x64"]
-        },
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        }
-      ]
-    },
-    "portable": {
-      "artifactName": "ShiftVault-Windows.${ext}"
-    },
-    "nsis": {
-      "artifactName": "ShiftVault-Setup.${ext}",
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "ShiftVault",
-      "deleteAppDataOnUninstall": false
-    }
+    "@capacitor/cli": "^6.0.0"
   }
 }

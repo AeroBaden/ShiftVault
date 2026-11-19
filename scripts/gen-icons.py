@@ -2,8 +2,7 @@
 """Generate the ShiftVault bank-vault icon set.
 
 Requires Pillow (`pip install pillow`). The generated PNGs are committed to the
-repository, so building the web app, Electron installer or Android APK does not
-need Python.
+repository, so building the web app or the Android APK does not need Python.
 
 Usage:
     python3 scripts/gen-icons.py
@@ -181,8 +180,8 @@ def save(image: Image.Image, relative_path: str) -> None:
 
 
 def main() -> None:
-    # Web, PWA and Electron icons live inside www/ so every target loads the
-    # exact same files.
+    # Web and PWA icons live inside www/ so every target loads the exact same
+    # files.
     save(render(512, "dark", "icon"), "www/icon-dark.png")
     save(render(512, "light", "icon"), "www/icon-light.png")
     save(render(512, "dark", "maskable"), "www/icon-maskable.png")

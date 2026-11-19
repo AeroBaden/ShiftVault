@@ -3,10 +3,11 @@ name: Build Android
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: android-${{ github.ref }}
@@ -37,7 +38,7 @@ jobs:
 
       - name: Verify project layout
         run: |
-          node -e "const fs=require('fs');const cfg=require('./capacitor.config.json');const files=['www/index.html','www/app.js','www/style.css','www/lang.js','www/icon-dark.png','www/icon-light.png','capacitor.config.json','scripts/prepare-android.mjs','assets/android/mipmap-xxxhdpi/ic_launcher_dark.png'];for(const f of files){if(!fs.existsSync(f)){console.error('Missing '+f);process.exit(1)}}if(cfg.webDir!=='www'){console.error('capacitor.config.json webDir must be www');process.exit(1)}console.log('Layout OK - webDir='+cfg.webDir)"
+          node -e "const fs=require('fs');const cfg=require('./capacitor.config.json');const files=['www/index.html','www/app.js','www/style.css','www/lang.js','www/icon-dark.png','www/icon-light.png','capacitor.config.json','scripts/prepare-android.mjs','assets/android/mipmap-xxxhdpi/ic_launcher_dark.png'];for(const f of files){if(!fs.existsSync(f)){console.error('Missing '+f);process.exit(1)}}if(cfg.webDir!=='www'){console.error('capacitor.config.json webDir must be www');process.exit(1)}if(cfg.appId!=='com.shiftvault.app'){console.error('Unexpected appId');process.exit(1)}console.log('Layout OK - webDir='+cfg.webDir+' appId='+cfg.appId)"
 
       - name: Install dependencies
         run: npm ci
@@ -45,10 +46,10 @@ jobs:
       - name: Add Android project
         run: npx cap add android
 
-      - name: Install launcher icons and aliases
+      - name: Install Vault icons and native plugins
         run: node scripts/prepare-android.mjs
 
-      - name: Sync web assets
+      - name: Sync web assets and Capacitor plugins
         run: npx cap sync android
 
       - name: Build debug APK
@@ -66,3 +67,9 @@ jobs:
           name: ShiftVault-Android
           path: ShiftVault-Android.apk
           if-no-files-found: error
+
+      - name: Attach APK to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ShiftVault-Android.apk

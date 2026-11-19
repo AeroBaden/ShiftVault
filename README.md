@@ -1,8 +1,26 @@
 # ShiftVault
 
+<p align="center">
+  <img src="docs/showcase/hero.webp" alt="ShiftVault: every shift, every cent, one vault" width="100%">
+</p>
+
 ShiftVault is a free, open-source personal finance and shift tracker for Android. It combines a ledger for accounts and entries with a shift log, monthly goals and multi-currency support, and it keeps working without a connection.
 
 The app is a Capacitor shell around a dependency-free web application in [`www/`](www). There is no backend, no account system and no telemetry. ShiftVault is Android-only for now.
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/showcase/overview.webp" alt="Overview with total liquidity, hourly rate and accounts" width="32%">
+  <img src="docs/showcase/track.webp" alt="Shift tracker with hours worked and calculated earnings" width="32%">
+  <img src="docs/showcase/goals.webp" alt="Savings goals with progress and working hours left" width="32%">
+</p>
+<p align="center">
+  <img src="docs/showcase/ledger.webp" alt="Ledger with income, expenses and backups in the light theme" width="32%">
+  <img src="docs/showcase/options.webp" alt="Options with theme, language, wage and currency settings" width="32%">
+</p>
+
+<p align="center"><sub>Dark and light themes, shown in a Pixel 10 Pro frame.</sub></p>
 
 ## Features
 
@@ -39,6 +57,8 @@ ShiftVault is not a plain web wrapper. The Android build adds:
 shiftvault/
 ├── .github/workflows/
 │   └── build-android.yml      # Android APK CI, optional release upload on v* tags
+├── docs/
+│   └── showcase/              # README banner and Pixel 10 Pro screenshot mockups
 ├── assets/
 │   └── android/               # launcher icon sets for dark/light and adaptive icons
 ├── scripts/

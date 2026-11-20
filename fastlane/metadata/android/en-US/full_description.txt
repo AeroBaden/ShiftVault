@@ -1,0 +1,38 @@
+ShiftVault is a free, open-source ledger and shift tracker for Android that keeps working without a connection. No account, no sign-in, no advertising and no tracking: everything you enter stays in the app's local storage on your phone.
+
+LEDGER
+• Multiple accounts with running balances
+• Income and expenses with categories and notes
+• Every entry keeps its own currency, so mixed-currency accounts stay correct
+• Search and filter by month, account, category or type
+
+SHIFT TRACKER
+• Log date, hours and earnings for every shift
+• Monthly totals and an overview of what you have earned
+• Store your hourly wage once and let ShiftVault calculate your pay
+
+GOALS AND INSIGHTS
+• Monthly savings targets with progress bars
+• Per-account breakdowns
+• See how many working hours are left until a goal is reached
+
+CURRENCIES
+• 12 currencies, formatted consistently in the interface
+• Optional exchange-rate refresh from the Frankfurter API, with a local cache and bundled offline fallback rates
+
+DESIGN
+• OLED-friendly dark theme with true black and a light theme
+• Six languages: English, German, Spanish, French, Italian and Portuguese
+• Two launcher icons, switchable at any time
+• Native system-bar theming, haptics and predictable back navigation
+
+BACKUPS
+• CSV export of the visible ledger for spreadsheets
+• Complete JSON backup of accounts, entries, shifts, goals and settings
+• Backups are written locally and never uploaded
+
+PRIVACY
+• No server, no accounts, no analytics, no advertising SDK
+• The only outbound request is the optional exchange-rate refresh; if it fails, the app stays fully usable
+
+ShiftVault is MIT licensed, contains no proprietary dependencies and is built from the public source at https://github.com/AeroBaden/ShiftVault

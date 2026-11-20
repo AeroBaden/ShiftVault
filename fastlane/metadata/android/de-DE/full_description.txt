@@ -1,0 +1,38 @@
+ShiftVault ist ein kostenloses, quelloffenes Haushaltsbuch und Schichttracker für Android, das ohne Internetverbindung funktioniert. Kein Konto, kein Login, keine Werbung und kein Tracking: alles, was du einträgst, bleibt im lokalen Speicher deines Geräts.
+
+HAUSHALTSBUCH
+• Mehrere Konten mit laufendem Saldo
+• Einnahmen und Ausgaben mit Kategorien und Notizen
+• Jeder Eintrag behält seine eigene Währung, gemischte Konten bleiben korrekt
+• Suchen und Filtern nach Monat, Konto, Kategorie oder Art
+
+SCHICHTTRACKER
+• Datum, Stunden und Verdienst für jede Schicht erfassen
+• Monatssummen und Übersicht deines Verdienstes
+• Stundenlohn einmal hinterlegen, ShiftVault rechnet den Verdienst aus
+
+ZIELE UND AUSWERTUNG
+• Monatliche Sparziele mit Fortschrittsbalken
+• Aufschlüsselung pro Konto
+• Anzeige, wie viele Arbeitsstunden bis zum Ziel noch fehlen
+
+WÄHRUNGEN
+• 12 Währungen, einheitlich formatiert
+• Optionaler Kursabgleich über die Frankfurter-API, mit lokalem Cache und mitgelieferten Offline-Ersatzkursen
+
+GESTALTUNG
+• OLED-freundliches dunkles Design mit echtem Schwarz und ein helles Design
+• Sechs Sprachen: Deutsch, Englisch, Spanisch, Französisch, Italienisch und Portugiesisch
+• Zwei App-Symbole, jederzeit umschaltbar
+• Native Systemleisten, Haptik und vorhersehbare Zurück-Navigation
+
+BACKUPS
+• CSV-Export des sichtbaren Haushaltsbuchs für Tabellenkalkulationen
+• Vollständiges JSON-Backup von Konten, Einträgen, Schichten, Zielen und Einstellungen
+• Backups entstehen lokal und werden nie hochgeladen
+
+DATENSCHUTZ
+• Kein Server, keine Konten, keine Analyse, kein Werbe-SDK
+• Die einzige ausgehende Anfrage ist der optionale Kursabgleich; schlägt er fehl, bleibt die App voll nutzbar
+
+ShiftVault steht unter der MIT-Lizenz, enthält keine proprietären Abhängigkeiten und wird aus dem öffentlichen Quellcode unter https://github.com/AeroBaden/ShiftVault gebaut.

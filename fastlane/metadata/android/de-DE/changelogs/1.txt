@@ -1,0 +1,8 @@
+Erste Version.
+
+• Offline-Haushaltsbuch mit Konten, Einnahmen, Ausgaben, Kategorien und Notizen
+• Schichttracker mit Stunden, Verdienst und Monatssummen
+• Sparziele mit Fortschritt und verbleibenden Arbeitsstunden
+• 12 Währungen mit optionalem Kursabgleich
+• Dunkles und helles Design, sechs Sprachen, zwei App-Symbole
+• CSV- und JSON-Backups, kein Netzwerk außer dem optionalen Kursabgleich

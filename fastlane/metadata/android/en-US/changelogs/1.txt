@@ -1,0 +1,8 @@
+First release.
+
+• Offline ledger with accounts, income, expenses, categories and notes
+• Shift tracker with hours, earnings and monthly totals
+• Savings goals with progress and remaining working hours
+• 12 currencies with optional exchange-rate refresh
+• Dark and light theme, six languages, two launcher icons
+• CSV and JSON backups, no network access except the optional rate refresh

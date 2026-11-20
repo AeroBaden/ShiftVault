@@ -1,0 +1,50 @@
+Categories:
+  - Money
+License: MIT
+AuthorName: ShiftVault contributors
+SourceCode: https://github.com/AeroBaden/ShiftVault
+IssueTracker: https://github.com/AeroBaden/ShiftVault/issues
+AutoName: ShiftVault
+
+Summary: Offline ledger and shift tracker
+Description: |-
+  ShiftVault is a free, open-source ledger and shift tracker for Android that
+  keeps working without a connection. No account, no sign-in, no advertising
+  and no tracking: everything you enter stays in the app's local storage.
+
+  The ledger keeps multiple accounts with running balances, plus income and
+  expenses with categories and notes. Every entry keeps its own currency, so
+  mixed-currency accounts stay correct.
+
+  The shift tracker logs date, hours and earnings per shift and shows monthly
+  totals. Store your hourly wage once and ShiftVault calculates your pay.
+
+  Savings goals show progress and how many working hours are left until a goal
+  is reached. 12 currencies are supported, with an optional exchange-rate
+  refresh from the Frankfurter API, a local cache and bundled fallback rates.
+
+  The app has an OLED-friendly dark theme with true black, a light theme, six
+  languages, two launcher icons, and exports the ledger as CSV or as a complete
+  JSON backup. All data stays on the device.
+
+RepoType: git
+Repo: https://github.com/AeroBaden/ShiftVault
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 1
+    commit: v1.0.0
+    timeout: 18000
+    subdir: android
+    init: npm ci
+    gradle:
+      - yes
+    scanignore:
+      - node_modules
+    scandelete:
+      - node_modules
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+$
+CurrentVersion: 1.0.0
+CurrentVersionCode: 1

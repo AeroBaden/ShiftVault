@@ -4,9 +4,25 @@
   <img src="docs/showcase/hero.webp" alt="ShiftVault: every shift, every cent, one vault" width="100%">
 </p>
 
+<p align="center">
+  <a href="https://github.com/AeroBaden/ShiftVault/releases/latest"><img src="https://img.shields.io/github/v/release/AeroBaden/ShiftVault?label=APK&color=2ea043" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/Android-6.0%2B-3ddc84?logo=android&logoColor=white" alt="Android 6.0+">
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license">
+  <img src="https://img.shields.io/badge/tracking-none-success" alt="No tracking">
+  <img src="https://img.shields.io/badge/ads-none-success" alt="No ads">
+</p>
+
 ShiftVault is a free, open-source personal finance and shift tracker for Android. It combines a ledger for accounts and entries with a shift log, monthly goals and multi-currency support, and it keeps working without a connection.
 
 The app is a Capacitor shell around a dependency-free web application in [`www/`](www). There is no backend, no account system and no telemetry. ShiftVault is Android-only for now.
+
+## Install
+
+**GitHub Releases** — download `ShiftVault-Android.apk` from the [latest release](https://github.com/AeroBaden/ShiftVault/releases/latest) and open it on your phone. Android asks once for permission to install unknown apps.
+
+**Obtainium** — add `https://github.com/AeroBaden/ShiftVault` as an app source and Obtainium keeps ShiftVault up to date straight from the GitHub releases.
+
+**F-Droid** — ShiftVault ships the store metadata F-Droid needs ([`fastlane/`](fastlane), recipe in [`docs/fdroid`](docs/fdroid)), but it is not in the official repository yet. The submission package and the remaining steps are documented there.
 
 ## Screenshots
 
@@ -58,7 +74,10 @@ shiftvault/
 ├── .github/workflows/
 │   └── build-android.yml      # Android APK CI, optional release upload on v* tags
 ├── docs/
+│   ├── fdroid/                # fdroiddata build recipe and submission checklist
 │   └── showcase/              # README banner and Pixel 10 Pro screenshot mockups
+├── fastlane/
+│   └── metadata/android/      # F-Droid store listing: texts, icon, screenshots
 ├── assets/
 │   └── android/               # launcher icon sets for dark/light and adaptive icons
 ├── scripts/

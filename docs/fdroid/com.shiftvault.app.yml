@@ -31,9 +31,12 @@ RepoType: git
 Repo: https://github.com/AeroBaden/ShiftVault
 
 Builds:
-  - versionName: 1.0.0
+  - versionName: '1.0'
     versionCode: 1
-    commit: v1.0.0
+    # Full SHA instead of v1.0.0: the v1.0.0 tag predates the fastlane metadata,
+    # and F-Droid reads the store listing from the built commit. Later versions
+    # are picked up from tags automatically (UpdateCheckMode below).
+    commit: 61df55d74eb705c9ee6cc97e135d501739b35a9b
     timeout: 18000
     subdir: android
     init: npm ci
@@ -46,5 +49,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
-CurrentVersion: 1.0.0
+CurrentVersion: '1.0'
 CurrentVersionCode: 1

@@ -5,7 +5,7 @@
   var t = SV.i18n.t;
   var store = SV.store;
   var money = SV.money;
-  var VERSION = "1.0.0";
+  var VERSION = "1.1.0";
 
   var TABS = ["overview", "track", "ledger", "goals", "options"];
   var TAB_ICONS = { overview: "overview", track: "clock", ledger: "list", goals: "target", options: "sliders" };
@@ -402,6 +402,16 @@
     html += '<div class="hero-main">';
     html += '<p class="eyebrow">' + esc(t("overview.liquidity")) + "</p>";
     html += '<p class="hero-amount num' + (total < 0 ? " negative" : "") + '">' + esc(money.format(total)) + "</p>";
+    var reserved = store.reserved();
+    var available = store.available();
+    html += '<dl class="liquidity-split">';
+    html += '<div class="split-pill">' +
+      '<dt class="split-label">' + esc(t("overview.reserved")) + "</dt>" +
+      '<dd class="split-value num">' + esc(money.format(reserved)) + "</dd></div>";
+    html += '<div class="split-pill' + (available > 0 ? " available" : available < 0 ? " shortfall" : "") + '">' +
+      '<dt class="split-label">' + esc(t("overview.available")) + "</dt>" +
+      '<dd class="split-value num">' + esc(money.format(available)) + "</dd></div>";
+    html += "</dl>";
     html += '<p class="hero-meta">';
     html += "<span>" + esc(t("overview.accountCount", { n: state.accounts.length })) + "</span>";
     html += "<span>" + esc(t("overview.thisMonth")) + "</span>";
@@ -648,6 +658,9 @@
         if (hoursLeft === null) {
           html += '<p class="field-hint">' + esc(t("goals.needRate")) + "</p>";
         }
+        if (complete) {
+          html += '<button class="btn btn-sm btn-primary btn-block" type="button" data-action="complete-goal" data-id="' + esc(goal.id) + '">' + esc(t("goals.completeSpend")) + "</button>";
+        }
         html += '<form class="goal-update" data-form="goal-update" data-id="' + esc(goal.id) + '">';
         html += '<span class="input-wrap"><input name="saved" type="number" step="0.01" min="0" inputmode="decimal" value="' + esc(displayValue(goal.saved)) + '" aria-label="' + esc(t("goals.saved")) + '"><span class="suffix">' + esc(money.symbol()) + "</span></span>";
         html += '<button class="btn btn-sm" type="submit">' + esc(t("goals.update")) + "</button>";
@@ -812,7 +825,7 @@
     if (modalResolve) {
       var resolve = modalResolve;
       modalResolve = null;
-      resolve(result === true);
+      resolve(result);
     }
   }
 
@@ -831,6 +844,33 @@
             '<div class="modal-actions">' +
               '<button class="btn" type="button" data-action="modal-cancel">' + esc(t("common.cancel")) + "</button>" +
               '<button class="btn btn-danger" type="button" data-action="modal-confirm">' + esc(confirmLabel || t("common.delete")) + "</button>" +
+            "</div>" +
+          "</div>" +
+        "</div>";
+      lockScroll(true);
+    });
+  }
+
+  function spendGoalDialog(goal) {
+    return new Promise(function (resolve) {
+      modalResolve = resolve;
+      var root = document.getElementById("modal-root");
+      root.innerHTML =
+        '<div class="modal-overlay" data-overlay="true">' +
+          '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="spend-title">' +
+            '<div class="modal-head">' +
+              '<h2 class="modal-title" id="spend-title">' + esc(t("goals.spendTitle")) + "</h2>" +
+              '<button class="icon-btn sm modal-close" type="button" data-action="modal-cancel" aria-label="' + esc(t("common.close")) + '">' + ICONS.close + "</button>" +
+            "</div>" +
+            '<p class="modal-text">' + esc(t("goals.spendBody", { name: goal.name, amount: money.format(goal.saved) })) + "</p>" +
+            '<div class="modal-body">' +
+              '<label class="field"><span class="field-label">' + esc(t("goals.spendAccount")) + "</span>" +
+                '<span class="select-wrap"><select class="input" id="spend-account">' + accountOptions(store.get().accounts[0].id) + "</select></span>" +
+              "</label>" +
+            "</div>" +
+            '<div class="modal-actions">' +
+              '<button class="btn" type="button" data-action="modal-cancel">' + esc(t("common.cancel")) + "</button>" +
+              '<button class="btn btn-primary" type="button" data-action="modal-spend-confirm">' + esc(t("goals.spendConfirm")) + "</button>" +
             "</div>" +
           "</div>" +
         "</div>";
@@ -904,17 +944,74 @@
   /* ------------------------------------------------------------------ exports */
 
   function download(filename, content, mime) {
-    var blob = new Blob([content], { type: mime || "text/plain;charset=utf-8" });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(function () {
-      URL.revokeObjectURL(url);
-    }, 1500);
+    try {
+      var blob = new Blob([content], { type: mime || "text/plain;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(function () {
+        URL.revokeObjectURL(url);
+      }, 1500);
+      return true;
+    } catch (err) {
+      console.error("ShiftVault: download failed", err);
+      return false;
+    }
+  }
+
+  function nativeExportPlugins() {
+    var filesystem = capPlugin("Filesystem");
+    var share = capPlugin("Share");
+    if (!filesystem || typeof filesystem.writeFile !== "function" || typeof filesystem.getUri !== "function") return null;
+    if (!share || typeof share.share !== "function") return null;
+    return { filesystem: filesystem, share: share };
+  }
+
+  function nativeExport(fileName, content, title) {
+    var plugins = nativeExportPlugins();
+    if (!plugins) return null;
+    return Promise.resolve()
+      .then(function () {
+        return plugins.filesystem.writeFile({
+          path: fileName,
+          data: content,
+          directory: "CACHE",
+          encoding: "utf8"
+        });
+      })
+      .then(function () {
+        return plugins.filesystem.getUri({ path: fileName, directory: "CACHE" });
+      })
+      .then(function (file) {
+        if (!file || !file.uri) throw new Error("No shareable URI for " + fileName);
+        return plugins.share.share({
+          title: title,
+          dialogTitle: title,
+          url: file.uri
+        });
+      });
+  }
+
+  function exportFile(fileName, content, mime, title) {
+    var pending = nativeExport(fileName, content, title);
+    if (!pending) {
+      if (download(fileName, content, mime)) toast(t("ledger.exported", { file: fileName }));
+      else toast(t("ledger.exportFailed"));
+      return;
+    }
+    pending
+      .then(function () {
+        toast(t("ledger.exported", { file: fileName }));
+      })
+      .catch(function (err) {
+        // Never fail silently inside the Android WebView.
+        console.error("ShiftVault: native export failed", err);
+        toast(t("ledger.exportFailed"));
+      });
   }
 
   function csvCell(value) {
@@ -948,17 +1045,16 @@
     var csv = "\uFEFF" + rows.map(function (row) {
       return row.map(csvCell).join(",");
     }).join("\r\n");
-    download("shiftvault-ledger-" + todayISO() + ".csv", csv, "text/csv;charset=utf-8");
-    toast(t("ledger.exportCsv"));
+    exportFile("shiftvault-ledger.csv", csv, "text/csv;charset=utf-8", "ShiftVault \u00b7 " + t("ledger.exportCsv"));
   }
 
   function exportJson() {
-    download(
+    exportFile(
       "shiftvault-backup-" + todayISO() + ".json",
       JSON.stringify(store.get(), null, 2),
-      "application/json;charset=utf-8"
+      "application/json;charset=utf-8",
+      "ShiftVault \u00b7 " + t("ledger.exportJson")
     );
-    toast(t("ledger.exportJson"));
   }
 
   /* ------------------------------------------------------------------ actions */
@@ -989,6 +1085,24 @@
       if (!ok) return;
       store.removeAccount(id);
       toast(t("accounts.deleted"));
+    });
+  }
+
+  function completeGoalAction(id) {
+    var goal = store.get().goals.find(function (item) {
+      return item.id === id;
+    });
+    if (!goal) return;
+    if (store.get().accounts.length === 0) {
+      toast(t("goals.spendNoAccount"));
+      return;
+    }
+    spendGoalDialog(goal).then(function (accountId) {
+      if (!accountId) return;
+      var tx = store.completeGoal(goal.id, String(accountId), t("goals.spendNote", { name: goal.name }));
+      if (!tx) return;
+      haptic("MEDIUM");
+      toast(t("goals.spendDone", { amount: money.format(tx.amount) }));
     });
   }
 
@@ -1081,6 +1195,9 @@
       case "delete-goal":
         deleteGoal(id);
         break;
+      case "complete-goal":
+        completeGoalAction(id);
+        break;
       case "delete-entry":
         if (store.removeTransaction(id)) toast(t("ledger.deleted"));
         break;
@@ -1131,6 +1248,10 @@
         break;
       case "modal-confirm":
         closeModal(true);
+        break;
+      case "modal-spend-confirm":
+        var spendAccount = document.getElementById("spend-account");
+        closeModal(spendAccount ? spendAccount.value : false);
         break;
       case "modal-cancel":
       case "close-modal":

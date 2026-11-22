@@ -215,6 +215,18 @@
     );
   }
 
+  function reservedInGoals() {
+    return round(
+      state.goals.reduce(function (sum, goal) {
+        return sum + goal.saved;
+      }, 0)
+    );
+  }
+
+  function availableCash() {
+    return round(totalLiquidity() - reservedInGoals());
+  }
+
   function addAccount(input) {
     var name = String((input && input.name) || "").trim().slice(0, 60);
     if (!name) return null;
@@ -339,6 +351,37 @@
     return true;
   }
 
+  function completeGoal(id, accountId, note) {
+    var goal = state.goals.find(function (item) {
+      return item.id === id;
+    });
+    if (!goal) return null;
+    var account = state.accounts.find(function (item) {
+      return item.id === accountId;
+    });
+    if (!account) return null;
+    var amount = round(goal.saved);
+    if (!(amount > 0)) return null;
+    var tx = {
+      id: uid(),
+      accountId: account.id,
+      type: "expense",
+      amount: amount,
+      note: String(note || goal.name).trim().slice(0, 120),
+      date: new Date().toISOString().slice(0, 10),
+      createdAt: new Date().toISOString(),
+      source: "manual",
+      hours: 0
+    };
+    state.transactions.push(tx);
+    account.balance = round(account.balance - amount);
+    state.goals = state.goals.filter(function (item) {
+      return item.id !== id;
+    });
+    commit();
+    return tx;
+  }
+
   function setFx(payload) {
     state.fx = {
       base: "EUR",
@@ -368,6 +411,8 @@
     setSetting: setSetting,
     setHourlyRate: setHourlyRate,
     total: totalLiquidity,
+    reserved: reservedInGoals,
+    available: availableCash,
     addAccount: addAccount,
     removeAccount: removeAccount,
     addTransaction: addTransaction,
@@ -376,6 +421,7 @@
     addGoal: addGoal,
     setGoalSaved: setGoalSaved,
     removeGoal: removeGoal,
+    completeGoal: completeGoal,
     setFx: setFx,
     reset: reset,
     uid: uid,

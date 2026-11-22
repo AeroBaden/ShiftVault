@@ -103,7 +103,27 @@ if (manifest.includes(".MainActivityDark")) {
   console.log("Manifest: launcher intent moved to Dark Vault / Light Vault aliases");
 }
 
-/* --------------------------------------------------- 3. native plugin setup */
+/* ------------------------------------------------------- 3. app version */
+
+const gradlePath = path.join(android, "app", "build.gradle");
+if (!fs.existsSync(gradlePath)) fail("app/build.gradle not found. Run: npx cap add android");
+
+const appVersion = String(JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version || "1.0.0");
+const versionParts = appVersion.split(".").map(function (part) {
+  return parseInt(part, 10) || 0;
+});
+const versionCode = versionParts[0] * 10000 + versionParts[1] * 100 + versionParts[2];
+
+const gradle = fs.readFileSync(gradlePath, "utf8");
+const patchedGradle = gradle
+  .replace(/versionCode\s+\d+/, "versionCode " + versionCode)
+  .replace(/versionName\s+"[^"]*"/, 'versionName "' + appVersion + '"');
+
+if (patchedGradle === gradle) fail("Could not set versionCode/versionName in app/build.gradle");
+fs.writeFileSync(gradlePath, patchedGradle);
+console.log(`Android version set to ${appVersion} (versionCode ${versionCode})`);
+
+/* --------------------------------------------------- 4. native plugin setup */
 
 function findMainActivity(dir) {
   if (!fs.existsSync(dir)) return null;

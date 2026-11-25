@@ -550,9 +550,32 @@ a {
 
 .liquidity-split {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 7px;
   margin-top: 2px;
+}
+
+.split-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.split-account {
+  min-width: 58px;
+  font-size: 9.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  overflow-wrap: anywhere;
+}
+
+.split-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .split-pill {
@@ -695,6 +718,20 @@ a {
 .account-meta {
   font-size: 11px;
   color: var(--text-3);
+}
+
+.account-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.account-split .split-pill {
+  padding: 5px 10px;
+}
+
+.account-split .split-value {
+  font-size: 12px;
 }
 
 /* --------------------------------------------------------------------------
@@ -1152,8 +1189,9 @@ input[type="date"].input {
 
 .goal-head {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
 }
 
 .goal-name {
@@ -1163,8 +1201,36 @@ input[type="date"].input {
   overflow-wrap: anywhere;
 }
 
-.goal-head .icon-btn {
+.goal-actions {
+  display: flex;
+  gap: 2px;
   margin-left: auto;
+}
+
+.account-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  height: 19px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-badge-dot {
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 .goal-figures {
@@ -1531,7 +1597,17 @@ input[type="date"].input {
 }
 
 .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin-top: 14px;
+}
+
+.spend-account {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 
 .modal-actions {

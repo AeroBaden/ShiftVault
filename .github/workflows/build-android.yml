@@ -45,10 +45,67 @@ jobs:
 
       - name: Verify project layout
         run: |
-          node -e "const fs=require('fs');const cfg=require('./capacitor.config.json');const files=['www/index.html','www/app.js','www/style.css','www/lang.js','www/icon-dark.png','www/icon-light.png','capacitor.config.json','scripts/prepare-android.mjs','assets/android/mipmap-xxxhdpi/ic_launcher_dark.png'];for(const f of files){if(!fs.existsSync(f)){console.error('Missing '+f);process.exit(1)}}if(cfg.webDir!=='www'){console.error('capacitor.config.json webDir must be www');process.exit(1)}if(cfg.appId!=='com.shiftvault.app'){console.error('Unexpected appId');process.exit(1)}console.log('Layout OK - webDir='+cfg.webDir+' appId='+cfg.appId)"
+          node -e "const fs=require('fs');const cfg=require('./capacitor.config.json');const files=['www/index.html','www/app.js','www/style.css','www/lang.js','www/icon-dark.png','www/icon-light.png','capacitor.config.json','scripts/prepare-android.mjs','scripts/configure-signing.mjs','assets/android/mipmap-xxxhdpi/ic_launcher_dark.png'];for(const f of files){if(!fs.existsSync(f)){console.error('Missing '+f);process.exit(1)}}if(cfg.webDir!=='www'){console.error('capacitor.config.json webDir must be www');process.exit(1)}if(cfg.appId!=='com.shiftvault.app'){console.error('Unexpected appId');process.exit(1)}console.log('Layout OK - webDir='+cfg.webDir+' appId='+cfg.appId)"
 
       - name: Install dependencies
         run: npm ci
+
+      # The keystore lives outside the repository. When the KEYSTORE_BASE64
+      # secret is set it is used as-is; otherwise a keystore is generated with
+      # fixed keytool parameters and kept in the Actions cache, so every later
+      # build reuses the same signing identity instead of a fresh debug key.
+      - name: Restore signing keystore
+        uses: actions/cache@v4
+        with:
+          path: ~/.shiftvault-keystore
+          key: shiftvault-signing-keystore-v1
+
+      - name: Prepare signing keystore
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
+        run: |
+          set -euo pipefail
+          DIR="$HOME/.shiftvault-keystore"
+          KS="$DIR/shiftvault-release.jks"
+          mkdir -p "$DIR"
+          ALIAS="${KEYSTORE_ALIAS:-shiftvault}"
+          PASS="${KEYSTORE_PASSWORD:-shiftvault-ci-keystore}"
+
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            if [ -z "${KEYSTORE_PASSWORD:-}" ]; then
+              echo "::error::KEYSTORE_PASSWORD must be set together with KEYSTORE_BASE64."
+              exit 1
+            fi
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$KS"
+            SOURCE="secret"
+          elif [ -f "$KS" ]; then
+            SOURCE="cache"
+          else
+            keytool -genkeypair \
+              -keystore "$KS" \
+              -storetype PKCS12 \
+              -alias "$ALIAS" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10950 \
+              -dname "CN=ShiftVault, OU=Android, O=ShiftVault, L=Berlin, ST=Berlin, C=DE" \
+              -storepass "$PASS" \
+              -keypass "$PASS"
+            SOURCE="generated"
+            echo "::warning::Generated a new signing keystore. Copy it into the KEYSTORE_BASE64 secret so the signature survives an Actions cache eviction."
+          fi
+
+          {
+            echo "SHIFTVAULT_KEYSTORE=$KS"
+            echo "SHIFTVAULT_STORE_PASSWORD=$PASS"
+            echo "SHIFTVAULT_KEY_ALIAS=$ALIAS"
+            echo "SHIFTVAULT_KEY_PASSWORD=$PASS"
+          } >> "$GITHUB_ENV"
+          echo "source=$SOURCE" >> "$GITHUB_OUTPUT"
+          echo "Signing keystore source: $SOURCE"
 
       - name: Add Android project
         run: npx cap add android
@@ -56,17 +113,25 @@ jobs:
       - name: Install Vault icons and native plugins
         run: node scripts/prepare-android.mjs
 
+      - name: Configure release signing
+        run: node scripts/configure-signing.mjs
+
       - name: Sync web assets and Capacitor plugins
         run: npx cap sync android
 
-      - name: Build debug APK
+      - name: Build signed release APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
       - name: Prepare artifact
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk ShiftVault-Android.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk ShiftVault-Android.apk
+
+      - name: Verify APK signature
+        run: |
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          "$SDK/build-tools/34.0.0/apksigner" verify --print-certs ShiftVault-Android.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

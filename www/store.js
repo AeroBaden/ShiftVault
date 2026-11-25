@@ -123,11 +123,20 @@
         return goal && typeof goal.name === "string" && toNumber(goal.target, 0) > 0;
       })
       .map(function (goal) {
+        // A goal belongs to exactly one account. Backups created before goals
+        // were linked are attached to the first account so no savings vanish.
+        var accountId =
+          typeof goal.accountId === "string" && accountIds.indexOf(goal.accountId) !== -1
+            ? goal.accountId
+            : accountIds.length
+            ? accountIds[0]
+            : "";
         return {
           id: typeof goal.id === "string" && goal.id ? goal.id : uid(),
           name: String(goal.name).slice(0, 60),
           target: round(goal.target),
           saved: Math.max(0, round(goal.saved)),
+          accountId: accountId,
           createdAt: typeof goal.createdAt === "string" ? goal.createdAt : new Date().toISOString()
         };
       });
@@ -223,8 +232,30 @@
     );
   }
 
+  function reservedForAccount(accountId) {
+    return round(
+      state.goals.reduce(function (sum, goal) {
+        return goal.accountId === accountId ? sum + goal.saved : sum;
+      }, 0)
+    );
+  }
+
   function availableCash() {
     return round(totalLiquidity() - reservedInGoals());
+  }
+
+  function availableForAccount(accountId) {
+    var account = state.accounts.find(function (item) {
+      return item.id === accountId;
+    });
+    if (!account) return 0;
+    return round(account.balance - reservedForAccount(accountId));
+  }
+
+  function goalsForAccount(accountId) {
+    return state.goals.filter(function (goal) {
+      return goal.accountId === accountId;
+    });
   }
 
   function addAccount(input) {
@@ -237,6 +268,12 @@
       createdAt: new Date().toISOString()
     };
     state.accounts.push(account);
+    // Goals saved before accounts were required get linked to the first account.
+    if (state.accounts.length === 1) {
+      state.goals.forEach(function (goal) {
+        if (!goal.accountId) goal.accountId = account.id;
+      });
+    }
     commit();
     return account;
   }
@@ -252,6 +289,17 @@
     state.transactions = state.transactions.filter(function (tx) {
       return tx.accountId !== id;
     });
+    // Goals are bound to one account. Move them to a remaining account; drop
+    // them only when no account is left to hold the savings.
+    var fallbackId = state.accounts.length ? state.accounts[0].id : "";
+    state.goals = state.goals
+      .filter(function (goal) {
+        return goal.accountId !== id || !!fallbackId;
+      })
+      .map(function (goal) {
+        if (goal.accountId === id) goal.accountId = fallbackId;
+        return goal;
+      });
     commit();
     return true;
   }
@@ -319,16 +367,44 @@
     var name = String((input && input.name) || "").trim().slice(0, 60);
     var target = round(input && input.target);
     if (!name || !(target > 0)) return null;
+    var accountId = String((input && input.accountId) || "");
+    var accountExists = state.accounts.some(function (account) {
+      return account.id === accountId;
+    });
+    if (!accountExists) return null;
     var goal = {
       id: uid(),
       name: name,
       target: target,
       saved: Math.max(0, round(input.saved || 0)),
+      accountId: accountId,
       createdAt: new Date().toISOString()
     };
     state.goals.push(goal);
     commit();
     return goal;
+  }
+
+  function updateGoal(id, input) {
+    var goal = state.goals.find(function (item) {
+      return item.id === id;
+    });
+    if (!goal || !input) return false;
+    var name = input.name === undefined ? goal.name : String(input.name).trim().slice(0, 60);
+    if (!name) return false;
+    var target = input.target === undefined ? goal.target : round(input.target);
+    if (!(target > 0)) return false;
+    var accountId = input.accountId === undefined ? goal.accountId : String(input.accountId);
+    var accountExists = state.accounts.some(function (account) {
+      return account.id === accountId;
+    });
+    if (!accountExists) return false;
+    goal.name = name;
+    goal.target = target;
+    goal.accountId = accountId;
+    if (input.saved !== undefined) goal.saved = Math.max(0, round(input.saved));
+    commit();
+    return true;
   }
 
   function setGoalSaved(id, saved) {
@@ -351,13 +427,14 @@
     return true;
   }
 
-  function completeGoal(id, accountId, note) {
+  function completeGoal(id, note) {
     var goal = state.goals.find(function (item) {
       return item.id === id;
     });
     if (!goal) return null;
+    // The expense always lands on the account the goal is linked to.
     var account = state.accounts.find(function (item) {
-      return item.id === accountId;
+      return item.id === goal.accountId;
     });
     if (!account) return null;
     var amount = round(goal.saved);
@@ -413,6 +490,9 @@
     total: totalLiquidity,
     reserved: reservedInGoals,
     available: availableCash,
+    reservedFor: reservedForAccount,
+    availableFor: availableForAccount,
+    goalsFor: goalsForAccount,
     addAccount: addAccount,
     removeAccount: removeAccount,
     addTransaction: addTransaction,
@@ -420,6 +500,7 @@
     addShift: addShift,
     addGoal: addGoal,
     setGoalSaved: setGoalSaved,
+    updateGoal: updateGoal,
     removeGoal: removeGoal,
     completeGoal: completeGoal,
     setFx: setFx,

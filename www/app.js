@@ -5,7 +5,7 @@
   var t = SV.i18n.t;
   var store = SV.store;
   var money = SV.money;
-  var VERSION = "1.1.0";
+  var VERSION = "1.2.0";
 
   var TABS = ["overview", "track", "ledger", "goals", "options"];
   var TAB_ICONS = { overview: "overview", track: "clock", ledger: "list", goals: "target", options: "sliders" };
@@ -28,6 +28,7 @@
     plus: svg('<path d="M12 5v14M5 12h14"/>'),
     trash: svg('<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l.9 13h9.2l.9-13"/>'),
     download: svg('<path d="M12 4v10M8 10.5l4 4 4-4M5 20h14"/>'),
+    pencil: svg('<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14.5 5.5l4 4"/>'),
     close: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
     arrow: svg('<path d="M5 12h14M13 6l6 6-6 6"/>')
   };
@@ -390,6 +391,51 @@
     );
   }
 
+  function liquidityPills(reserved, available) {
+    return (
+      '<div class="split-pills">' +
+        '<div class="split-pill">' +
+          '<span class="split-label">' + esc(t("overview.reserved")) + "</span>" +
+          '<span class="split-value num">' + esc(money.format(reserved)) + "</span>" +
+        "</div>" +
+        '<div class="split-pill' + (available > 0 ? " available" : available < 0 ? " shortfall" : "") + '">' +
+          '<span class="split-label">' + esc(t("overview.available")) + "</span>" +
+          '<span class="split-value num">' + esc(money.format(available)) + "</span>" +
+        "</div>" +
+      "</div>"
+    );
+  }
+
+  function liquiditySplit(accounts, withTotals) {
+    if (!accounts || accounts.length === 0) return "";
+    var rows = accounts.map(function (account) {
+      return (
+        '<div class="split-row">' +
+          '<span class="split-account">' + esc(account.name) + "</span>" +
+          liquidityPills(store.reservedFor(account.id), store.availableFor(account.id)) +
+        "</div>"
+      );
+    });
+    if (withTotals) {
+      rows.push(
+        '<div class="split-row">' +
+          '<span class="split-account">' + esc(t("overview.allAccounts")) + "</span>" +
+          liquidityPills(store.reserved(), store.available()) +
+        "</div>"
+      );
+    }
+    return '<div class="liquidity-split">' + rows.join("") + "</div>";
+  }
+
+  function accountBadge(account) {
+    return (
+      '<span class="account-badge" title="' + esc(t("goals.linkedAccount")) + '">' +
+        '<span class="account-badge-dot" aria-hidden="true"></span>' +
+        esc(account ? account.name : t("goals.accountMissing")) +
+      "</span>"
+    );
+  }
+
   /* ------------------------------------------------------------------ overview */
 
   function viewOverview() {
@@ -402,16 +448,7 @@
     html += '<div class="hero-main">';
     html += '<p class="eyebrow">' + esc(t("overview.liquidity")) + "</p>";
     html += '<p class="hero-amount num' + (total < 0 ? " negative" : "") + '">' + esc(money.format(total)) + "</p>";
-    var reserved = store.reserved();
-    var available = store.available();
-    html += '<dl class="liquidity-split">';
-    html += '<div class="split-pill">' +
-      '<dt class="split-label">' + esc(t("overview.reserved")) + "</dt>" +
-      '<dd class="split-value num">' + esc(money.format(reserved)) + "</dd></div>";
-    html += '<div class="split-pill' + (available > 0 ? " available" : available < 0 ? " shortfall" : "") + '">' +
-      '<dt class="split-label">' + esc(t("overview.available")) + "</dt>" +
-      '<dd class="split-value num">' + esc(money.format(available)) + "</dd></div>";
-    html += "</dl>";
+    html += liquiditySplit(state.accounts, state.accounts.length > 1);
     html += '<p class="hero-meta">';
     html += "<span>" + esc(t("overview.accountCount", { n: state.accounts.length })) + "</span>";
     html += "<span>" + esc(t("overview.thisMonth")) + "</span>";
@@ -448,6 +485,9 @@
       html += '<div class="grid">';
       state.accounts.forEach(function (account) {
         var count = entryCount(account.id);
+        var goalCount = store.goalsFor(account.id).length;
+        var meta = t("overview.entries", { n: count });
+        if (goalCount > 0) meta += " \u00b7 " + t("overview.goals", { n: goalCount });
         html +=
           '<article class="card account-card">' +
             '<div class="account-top">' +
@@ -455,7 +495,8 @@
               '<button class="icon-btn sm" type="button" data-action="delete-account" data-id="' + esc(account.id) + '" aria-label="' + esc(t("common.delete")) + '">' + ICONS.trash + "</button>" +
             "</div>" +
             '<p class="account-balance num' + (account.balance < 0 ? " negative" : "") + '">' + esc(money.format(account.balance)) + "</p>" +
-            '<p class="account-meta">' + esc(t("overview.entries", { n: count })) + "</p>" +
+            '<div class="account-split">' + liquidityPills(store.reservedFor(account.id), store.availableFor(account.id)) + "</div>" +
+            '<p class="account-meta">' + esc(meta) + "</p>" +
           "</article>";
       });
       html += "</div>";
@@ -612,16 +653,22 @@
   function viewGoals() {
     var state = store.get();
     var goals = state.goals;
+    var accounts = state.accounts;
     var rate = state.settings.hourlyRate;
 
     var html = '<div class="page-head"><div>' +
       '<h1 class="page-title">' + esc(t("goals.title")) + "</h1>" +
       '<p class="page-sub">' + esc(t("overview.rate")) + ": " + (rate > 0 ? esc(money.format(rate)) + " / h" : "&mdash;") + "</p>" +
       "</div>";
-    if (!ui.goalForm && goals.length > 0) {
+    if (!ui.goalForm && goals.length > 0 && accounts.length > 0) {
       html += '<button class="btn btn-sm" type="button" data-action="toggle-goal-form" style="margin-left:auto">' + ICONS.plus + esc(t("goals.new")) + "</button>";
     }
     html += "</div>";
+
+    if (accounts.length === 0) {
+      html += emptyState(t("goals.noAccountTitle"), t("goals.noAccountBody"), tabButton("overview", t("track.goOverview")));
+      return html;
+    }
 
     if (ui.goalForm) html += goalForm();
 
@@ -644,7 +691,11 @@
         var hoursLeft = rate > 0 ? remaining / rate : null;
         html += '<article class="card goal-card">';
         html += '<div class="goal-head"><h3 class="goal-name">' + esc(goal.name) + "</h3>" +
-          '<button class="icon-btn sm" type="button" data-action="delete-goal" data-id="' + esc(goal.id) + '" aria-label="' + esc(t("common.delete")) + '">' + ICONS.trash + "</button></div>";
+          accountBadge(accountById(goal.accountId)) +
+          '<div class="goal-actions">' +
+            '<button class="icon-btn sm" type="button" data-action="edit-goal" data-id="' + esc(goal.id) + '" aria-label="' + esc(t("goals.edit")) + '">' + ICONS.pencil + "</button>" +
+            '<button class="icon-btn sm" type="button" data-action="delete-goal" data-id="' + esc(goal.id) + '" aria-label="' + esc(t("common.delete")) + '">' + ICONS.trash + "</button>" +
+          "</div></div>";
         html += '<div class="goal-figures"><span class="goal-saved num">' + esc(money.format(goal.saved)) + "</span>" +
           '<span class="goal-target num">/ ' + esc(money.format(goal.target)) + "</span>" +
           '<span class="goal-pct num' + (complete ? " done" : "") + '">' + rounded + "%</span></div>";
@@ -680,6 +731,11 @@
           '<label class="field span-2">' +
             '<span class="field-label">' + esc(t("goals.name")) + "</span>" +
             '<input class="input" name="name" type="text" maxlength="60" autocomplete="off" required>' +
+          "</label>" +
+          '<label class="field span-2">' +
+            '<span class="field-label">' + esc(t("goals.linkedAccount")) + "</span>" +
+            '<span class="select-wrap"><select class="input" name="accountId" required>' + accountOptions() + "</select></span>" +
+            '<span class="field-hint">' + esc(t("goals.linkedAccountHint")) + "</span>" +
           "</label>" +
           '<label class="field">' +
             '<span class="field-label">' + esc(t("goals.target")) + "</span>" +
@@ -852,6 +908,7 @@
   }
 
   function spendGoalDialog(goal) {
+    var account = accountById(goal.accountId);
     return new Promise(function (resolve) {
       modalResolve = resolve;
       var root = document.getElementById("modal-root");
@@ -864,13 +921,47 @@
             "</div>" +
             '<p class="modal-text">' + esc(t("goals.spendBody", { name: goal.name, amount: money.format(goal.saved) })) + "</p>" +
             '<div class="modal-body">' +
-              '<label class="field"><span class="field-label">' + esc(t("goals.spendAccount")) + "</span>" +
-                '<span class="select-wrap"><select class="input" id="spend-account">' + accountOptions(store.get().accounts[0].id) + "</select></span>" +
-              "</label>" +
+              '<div class="spend-account">' +
+                '<span class="field-label">' + esc(t("goals.spendAccount")) + "</span>" +
+                accountBadge(account) +
+              "</div>" +
             "</div>" +
             '<div class="modal-actions">' +
               '<button class="btn" type="button" data-action="modal-cancel">' + esc(t("common.cancel")) + "</button>" +
               '<button class="btn btn-primary" type="button" data-action="modal-spend-confirm">' + esc(t("goals.spendConfirm")) + "</button>" +
+            "</div>" +
+          "</div>" +
+        "</div>";
+      lockScroll(true);
+    });
+  }
+
+  function goalEditDialog(goal) {
+    return new Promise(function (resolve) {
+      modalResolve = resolve;
+      var root = document.getElementById("modal-root");
+      root.innerHTML =
+        '<div class="modal-overlay" data-overlay="true">' +
+          '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="goal-edit-title">' +
+            '<div class="modal-head">' +
+              '<h2 class="modal-title" id="goal-edit-title">' + esc(t("goals.editTitle")) + "</h2>" +
+              '<button class="icon-btn sm modal-close" type="button" data-action="modal-cancel" aria-label="' + esc(t("common.close")) + '">' + ICONS.close + "</button>" +
+            "</div>" +
+            '<div class="modal-body">' +
+              '<label class="field"><span class="field-label">' + esc(t("goals.name")) + "</span>" +
+                '<input class="input" id="goal-edit-name" type="text" maxlength="60" autocomplete="off" value="' + esc(goal.name) + '">' +
+              "</label>" +
+              '<label class="field"><span class="field-label">' + esc(t("goals.target")) + "</span>" +
+                '<span class="input-suffix"><input id="goal-edit-target" type="number" step="0.01" min="0" inputmode="decimal" value="' + esc(displayValue(goal.target)) + '"><span class="suffix">' + esc(money.symbol()) + "</span></span>" +
+              "</label>" +
+              '<label class="field"><span class="field-label">' + esc(t("goals.linkedAccount")) + "</span>" +
+                '<span class="select-wrap"><select class="input" id="goal-edit-account">' + accountOptions(goal.accountId) + "</select></span>" +
+                '<span class="field-hint">' + esc(t("goals.linkedAccountHint")) + "</span>" +
+              "</label>" +
+            "</div>" +
+            '<div class="modal-actions">' +
+              '<button class="btn" type="button" data-action="modal-cancel">' + esc(t("common.cancel")) + "</button>" +
+              '<button class="btn btn-primary" type="button" data-action="modal-goal-save">' + esc(t("common.save")) + "</button>" +
             "</div>" +
           "</div>" +
         "</div>";
@@ -1093,16 +1184,46 @@
       return item.id === id;
     });
     if (!goal) return;
-    if (store.get().accounts.length === 0) {
+    if (!accountById(goal.accountId)) {
       toast(t("goals.spendNoAccount"));
       return;
     }
-    spendGoalDialog(goal).then(function (accountId) {
-      if (!accountId) return;
-      var tx = store.completeGoal(goal.id, String(accountId), t("goals.spendNote", { name: goal.name }));
-      if (!tx) return;
+    spendGoalDialog(goal).then(function (ok) {
+      if (!ok) return;
+      var tx = store.completeGoal(goal.id, t("goals.spendNote", { name: goal.name }));
+      if (!tx) {
+        toast(t("goals.spendNoAccount"));
+        return;
+      }
       haptic("MEDIUM");
       toast(t("goals.spendDone", { amount: money.format(tx.amount) }));
+    });
+  }
+
+  function editGoalAction(id) {
+    var goal = store.get().goals.find(function (item) {
+      return item.id === id;
+    });
+    if (!goal) return;
+    goalEditDialog(goal).then(function (result) {
+      if (!result) return;
+      var name = String(result.name || "").trim();
+      if (!name) {
+        toast(t("accounts.nameRequired"));
+        return;
+      }
+      var target = num(result.target);
+      if (!(target > 0)) {
+        toast(t("goals.invalidTarget"));
+        return;
+      }
+      if (!result.accountId) {
+        toast(t("goals.accountRequired"));
+        return;
+      }
+      if (store.updateGoal(goal.id, { name: name, target: money.toEur(target), accountId: String(result.accountId) })) {
+        toast(t("goals.updated"));
+      }
     });
   }
 
@@ -1198,6 +1319,9 @@
       case "complete-goal":
         completeGoalAction(id);
         break;
+      case "edit-goal":
+        editGoalAction(id);
+        break;
       case "delete-entry":
         if (store.removeTransaction(id)) toast(t("ledger.deleted"));
         break;
@@ -1250,8 +1374,17 @@
         closeModal(true);
         break;
       case "modal-spend-confirm":
-        var spendAccount = document.getElementById("spend-account");
-        closeModal(spendAccount ? spendAccount.value : false);
+        closeModal(true);
+        break;
+      case "modal-goal-save":
+        var editName = document.getElementById("goal-edit-name");
+        var editTarget = document.getElementById("goal-edit-target");
+        var editAccount = document.getElementById("goal-edit-account");
+        closeModal({
+          name: editName ? editName.value : "",
+          target: editTarget ? editTarget.value : "",
+          accountId: editAccount ? editAccount.value : ""
+        });
         break;
       case "modal-cancel":
       case "close-modal":
@@ -1341,14 +1474,22 @@
         toast(t("goals.invalidTarget"));
         return;
       }
+      var goalAccountId = String(goalData.get("accountId") || "");
+      if (!goalAccountId) {
+        toast(t("goals.accountRequired"));
+        return;
+      }
       var goal = store.addGoal({
         name: goalName,
         target: money.toEur(target),
-        saved: money.toEur(num(goalData.get("saved")))
+        saved: money.toEur(num(goalData.get("saved"))),
+        accountId: goalAccountId
       });
       if (goal) {
         ui.goalForm = false;
         toast(t("goals.added"));
+      } else {
+        toast(t("goals.accountRequired"));
       }
       return;
     }
